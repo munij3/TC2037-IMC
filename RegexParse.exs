@@ -17,7 +17,7 @@ defmodule Regx do
 
   def token_from_line(line, html_string, aftr,bftr) do
     #IO.inspect(bftr)
-    #IO.inspect(line)
+    IO.inspect(line)
       cond do
 
     Regex.match?(~r/\s*[{}\[\]\(\)]\s*"\N*"\s*:/,line) and bftr ->
@@ -31,14 +31,14 @@ defmodule Regx do
       token_from_line(tail,html_string,aftr,false)
 
 
-      (Regex.match?(~r/\s*"\N*"\s*\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)) ->
-        [_string, token] = Regex.run(~r/(\s*"\N*"\s*)\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)
-        [_string2, token2] = Regex.run(~r/\s*"\N*"\s*\:(\s*"\N*"\s*),\s*"\N*"\s*\:/,line)
+      (Regex.match?(~r/(\s*"[^"]*"\s*)\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)) ->
+        [_string, token] = Regex.run(~r/(\s*"[^"]*"\s*)\:\s*"\N*"\s*,\s*"[^"]*"\s*\:/,line)
+        [_string2, token2] = Regex.run(~r/\s*"[^"]*"\s*\:(\s*"[^"]*"\s*),\s*"[^"]*"\s*\:/,line)
         [_string3, token3] = Regex.run(~r/(,)/,line)
-        [_h | t] = String.split(line, ~r/(\s*"\N*"\s*\:\s"\N*"\s*,)/, parts: 2)
+        [_h | t] = String.split(line, ~r/(\s*"[^"]*"\s*\:\s"[^"]*"\s*,)/, parts: 2)
         tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span><span class='string'>#{token2}</span><span class='punctuation'>#{token3}</span>"
         [tail] = t
-        IO.inspect("#{line} ||| #{tail} ||| #{token3}")
+        #IO.inspect("#{line} ||| #{token} ||| #{token2} ||| #{token3}")
         html_string = tmp
         aftr = true
         token_from_line(tail,html_string,aftr,false)
@@ -48,7 +48,7 @@ defmodule Regx do
           [_h | t] = String.split(line, ~r/(\s*"\N*"\s*\:)/, parts: 2)
           tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span>"
           [tail] = t
-          IO.inspect("#{line} ||| #{tail} ||| #{token}")
+          #IO.inspect("#{line} ||| #{tail} ||| #{token}")
           html_string = tmp
           aftr = true
           token_from_line(tail,html_string,aftr,false)
