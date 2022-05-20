@@ -1,3 +1,6 @@
+#By Andrew Dunkerley and Juan Muniain
+#Json Regex Parser
+
 defmodule Regx do
   def get_lines(in_filename, out_filename) do
     expr =
@@ -16,43 +19,43 @@ defmodule Regx do
   end
 
   def token_from_line(line, html_string, aftr,bftr) do
-    #IO.inspect(bftr)
-    #IO.inspect(line)
+    #bftr checks for punctuations at the start of a line
+    #aftr checks for expressions after ":"
       cond do
 
+#Checks for punctuations only at the start of a new line
     Regex.match?(~r/\s*[{}\[\]\(\)]\s*"\N*"\s*:/,line) and bftr ->
       [_string, token] = Regex.run(~r/(\s*[[:punct:]]\s*)/,line)
       [_h | t] = String.split(line, ~r/(\s*[[:punct:]]\s*)/, parts: 2)
       tmp = "#{html_string}<span class='punctuation'>#{token}</span>"
       aftr = false
       [tail] = t
-      #IO.inspect(line)
       html_string = tmp
       token_from_line(tail,html_string,aftr,false)
 
-
-      (Regex.match?(~r/\s*"\N*"\s*\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)) ->
-        [_string, token] = Regex.run(~r/(\s*"\N*"\s*)\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)
-        [_string2, token2] = Regex.run(~r/\s*"\N*"\s*\:(\s*"\N*"\s*),\s*"\N*"\s*\:/,line)
+#Checks for expressions that include multiple " ": " " in the same line
+      (Regex.match?(~r/(\s*"[^"]*"\s*)\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)) ->
+        [_string, token] = Regex.run(~r/(\s*"[^"]*"\s*)\:\s*"\N*"\s*,\s*"[^"]*"\s*\:/,line)
+        [_string2, token2] = Regex.run(~r/\s*"[^"]*"\s*\:(\s*"[^"]*"\s*),\s*"[^"]*"\s*\:/,line)
         [_string3, token3] = Regex.run(~r/(,)/,line)
-        [_h | t] = String.split(line, ~r/(\s*"\N*"\s*\:\s"\N*"\s*,)/, parts: 2)
+        [_h | t] = String.split(line, ~r/(\s*"[^"]*"\s*\:\s"[^"]*"\s*,)/, parts: 2)
         tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span><span class='string'>#{token2}</span><span class='punctuation'>#{token3}</span>"
         [tail] = t
-        IO.inspect("#{line} ||| #{tail} ||| #{token3}")
         html_string = tmp
         aftr = true
         token_from_line(tail,html_string,aftr,false)
 
-        (Regex.match?(~r/\s*"\N*"\s*\:/,line)) ->
-          [_string, token] = Regex.run(~r/(\s*"\N*"\s*):/,line)
-          [_h | t] = String.split(line, ~r/(\s*"\N*"\s*\:)/, parts: 2)
-          tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span>"
-          [tail] = t
-          IO.inspect("#{line} ||| #{tail} ||| #{token}")
-          html_string = tmp
-          aftr = true
-          token_from_line(tail,html_string,aftr,false)
-
+#Checks for expressions that go before :
+      (Regex.match?(~r/\s*"\N*"\s*\:/,line)) ->
+        [_string, token] = Regex.run(~r/(\s*"\N*"\s*):/,line)
+        [_h | t] = String.split(line, ~r/(\s*"\N*"\s*\:)/, parts: 2)
+        tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span>"
+        [tail] = t
+        #IO.inspect("#{line} ||| #{tail} ||| #{token}")
+        html_string = tmp
+        aftr = true
+        token_from_line(tail,html_string,aftr,false)
+#Checks for expressions that go after : but that have a punctuation beforehand
        (Regex.match?(~r/\s*[,\]\[{}]\s*"\N*"\s*/,line) and aftr) ->
           [_string, token] = Regex.run(~r/(\s*[,\]\[{}]\s*)/, line)
           [_h | t] = String.split(line, ~r/\s*[,\]\[{}]\s*/, parts: 2)
@@ -62,7 +65,7 @@ defmodule Regx do
           html_string = tmp
           token_from_line(tail,html_string,aftr,false)
 
-
+#Checks for expresions that go after :
         (Regex.match?(~r/\s*"\N*"\s*/,line)) ->
             [_string, token] = Regex.run(~r/(\s*"\N*"\s*)/,line)
             [_h | t] = String.split(line, ~r/(\s*"\N*"\s*)/,  parts: 2 )
@@ -73,7 +76,7 @@ defmodule Regx do
 
             token_from_line(tail,html_string,aftr,false)
 
-
+#Checks for expressions that have numbers after the : in any way
         Regex.match?(~r/\s*\d+\.?\d*E?[+|-]?\d*\s*/,line) ->
             [_string, token] = Regex.run(~r/(\s*\d+\.?\d*E?[+|-]?\d*\s*)/,line)
             [_h | t] = String.split(line, ~r/(\s*\d+\.?\d*E?[+|-]?\d*\s*)/,  parts: 2)
@@ -84,7 +87,7 @@ defmodule Regx do
             html_string = tmp
             token_from_line(tail,html_string,aftr,false)
 
-
+#Checks for expressions that include the keywords null true or false
         Regex.match?(~r/\s*null|\s*true|\s*false\s*/,line) ->
             [_string, token] = Regex.run(~r/(\s*null|\s*true|\s*false\s*)/,line)
             [_h | t] = String.split(line, ~r/(\s*null|\s*true|\s*false\s*)/, parts: 2)
@@ -95,6 +98,7 @@ defmodule Regx do
             html_string = tmp
             token_from_line(tail,html_string,aftr,false)
 
+#Checks for expressions that include a punctuation and are not at the start of a line
         Regex.match?(~r/\s*[[:punct:]]\s*/,line) ->
             [_string, token] = Regex.run(~r/(\s*[[:punct:]]\s*)/,line)
             [_h | t] = String.split(line, ~r/(\s*[[:punct:]]\s*)/, parts: 2)
