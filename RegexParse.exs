@@ -8,7 +8,7 @@ defmodule Regx do
       |> File.stream!()
       |> Enum.map(&token_from_line/1)
       |> Enum.filter(&(&1 != nil))
-    tmp = "<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<title>JSON Code</title>\n\t\t<link rel='stylesheet' href='token_colors.css'>\n\t</head>\n\t<body>\n\t\t<h1>Date: #{DateTime.utc_now}</h1>\n\t\t<pre>\n\t\t\t#{expr}\n\t\t\t</pre>\n\t</body>\n</html>"
+    tmp = "<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<title>JSON Code</title>\n\t\t<link rel='stylesheet' href='token_colors.css'>\n\t</head>\n\t<body>\n\t\t<h1>Date: #{DateTime.utc_now}</h1>\n\t\t<pre>\n#{expr}\n\t\t\t</pre>\n\t</body>\n</html>"
     expr = tmp
     File.write(out_filename, expr)
   end
@@ -51,7 +51,6 @@ defmodule Regx do
       tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span>"
       html_string = tmp
       [tail] = t
-      #IO.inspect("#{line} ||| #{tail} ||| #{token}")
       aftr = true
       token_from_line(tail,html_string,aftr,false)
 
@@ -78,11 +77,9 @@ defmodule Regx do
     #Checks for expressions that have numbers after the : in any way
     (Regex.match?(~r/\s*\d+\.?\d*E?[+|-]?\d*\s*/,line)) ->
       [_string, token] = Regex.run(~r/(\s*\d+\.?\d*E?[+|-]?\d*\s*)/,line)
-      IO.inspect(token)
       [_h | t] = String.split(line, ~r/(\s*\d+\.?\d*E?[+|-]?\d*\s*)/,  parts: 2)
       tmp = "#{html_string}<span class='number'>#{token}</span>"
       html_string = tmp
-      #IO.inspect(token)
       [tail] = t
       aftr = false
       token_from_line(tail,html_string,aftr,false)
@@ -93,7 +90,6 @@ defmodule Regx do
       [_h | t] = String.split(line, ~r/(\s*null|\s*true|\s*false\s*)/, parts: 2)
       tmp = "#{html_string}<span class='boolean'>#{token}</span>"
       html_string = tmp
-      #IO.inspect(token)
       [tail] = t
       aftr = false
       token_from_line(tail,html_string,aftr,false)
@@ -115,4 +111,4 @@ defmodule Regx do
   end
 end
 
-Regx.get_lines("./Test_Files/example_1.json", "template_page.html")
+Regx.get_lines("./Test_Files/example_4.json", "template_page.html")
