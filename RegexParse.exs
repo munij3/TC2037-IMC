@@ -127,6 +127,24 @@ defmodule Regx do
         tmp
     end
   end
+
+  def multiParse do
+    ["./Test_HW/out_file_000006.json",
+    "./Test_HW/out_file_000001.json",
+    "./Test_HW/out_file_000002.json",
+    "./Test_HW/out_file_000003.json",
+    "./Test_HW/out_file_000004.json",
+    "./Test_HW/out_file_000002.json"]
+    |> Enum.map(&Task.async(fn -> get_lines(&1,"template.html") end))
+    |> Enum.map(&Task.await(&1))
+  end
+
+  def generateName(n) do
+    "template_page#{n}.html"
+    if(n >= 1) do
+      generateName(n-1)
+    end
+  end
 end
 
-Regx.get_lines("./Test_HW/out_file_000005.json", "template_page.html")
+Regx.multiParse()
