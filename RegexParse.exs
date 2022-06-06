@@ -33,12 +33,11 @@ defmodule Regx do
       token_from_line(tail,html_string,aftr,false)
 
     #Checks for expressions that include multiple " ": " " in the same line
-    (Regex.match?(~r/(\s*"[^"]*"\s*)\:\s*"\N*"\s*,\s*"\N*"\s*\:/,line)) ->
-      [_string, token] = Regex.run(~r/(\s*"[^"]*"\s*)\:\s*"\N*"\s*,\s*"[^"]*"\s*\:/,line) # Matches object key name
-      [_string2, token2] = Regex.run(~r/\s*"[^"]*"\s*\:(\s*"[^"]*"\s*),\s*"[^"]*"\s*\:/,line) # Matches strings after object keys are defined
-      [_string3, token3] = Regex.run(~r/(,)/,line) # Matches parentheses and brackets
-      [_h | t] = String.split(line, ~r/(\s*"[^"]*"\s*\:\s"[^"]*"\s*,)/, parts: 2)
-      tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span><span class='string'>#{token2}</span><span class='punctuation'>#{token3}</span>"
+    (Regex.match?(~r/\s*"[^"]*"\s*\:(\s*"[^"]*"\s*|\s*[^,]*\s*),\s*"[^"]*"\s*\:/,line)) ->
+      [_string, token,token2,token3] = Regex.run(~r/(\s*"[^"]*"\s*)\:(\s*"[^"]*"\s*|\s*[^,]*\s*)(,)\s*"[^"]*"\s*\:/,line) # Matches object key name
+      [_h | t] = String.split(line, ~r/(\s*"[^"]*"\s*\:(\s*"[^"]*"\s*|\s*[^,]*\s*),)/, parts: 2)
+      itoken = getType(token2)
+      tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span>#{itoken}<span class='punctuation'>#{token3}</span>"
       html_string = tmp
       [tail] = t
       aftr = true
@@ -109,6 +108,25 @@ defmodule Regx do
 
     end
   end
+
+  def getType(expr) do
+    cond do
+      (Regex.match?(~r/\s*"\N*"\s*/,expr)) ->
+        [_string, token] = Regex.run(~r/(\s*"\N*"\s*)/,expr)
+        tmp = "<span class='string'>#{token}</span>"
+        tmp
+
+      (Regex.match?(~r/\s*\d+\.?\d*E?[+|-]?\d*\s*/,expr)) ->
+        [_string, token] = Regex.run(~r/(\s*\d+\.?\d*E?[+|-]?\d*\s*)/,expr)
+        tmp = "<span class='number'>#{token}</span>"
+        tmp
+
+      (Regex.match?(~r/\s*null|\s*true|\s*false\s*/,expr)) ->
+        [_string, token] = Regex.run(~r/(\s*null|\s*true|\s*false\s*)/,expr)
+        tmp = "<span class='boolean'>#{token}</span>"
+        tmp
+    end
+  end
 end
 
-Regx.get_lines("./Test_Files/example_4.json", "template_page.html")
+Regx.get_lines("./Test_HW/out_file_000005.json", "template_page.html")
