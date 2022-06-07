@@ -134,7 +134,7 @@ defmodule Regx do
     "./Test_HW/out_file_000002.json",
     "./Test_HW/out_file_000003.json",
     "./Test_HW/out_file_000004.json",
-    "./Test_HW/out_file_000002.json"]
+    "./Test_HW/out_file_000010.json"]
     |> Enum.map(&Task.async(fn -> get_lines(&1,"template.html") end))
     |> Enum.map(&Task.await(&1))
   end
