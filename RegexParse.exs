@@ -8,7 +8,7 @@ defmodule Regx do
       |> File.stream!()
       |> Enum.map(&token_from_line/1)
       |> Enum.filter(&(&1 != nil))
-    tmp = "<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<title>JSON Code</title>\n\t\t<link rel='stylesheet' href='token_colors.css'>\n\t</head>\n\t<body>\n\t\t<h1>Date: #{DateTime.utc_now}</h1>\n\t\t<pre>\n#{expr}\n\t\t\t</pre>\n\t</body>\n</html>"
+    tmp = "<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<title>JSON Code</title>\n\t\t<link rel='stylesheet' href='../token_colors.css'>\n\t</head>\n\t<body>\n\t\t<h1>Date: #{DateTime.utc_now}</h1>\n\t\t<pre>\n#{expr}\n\t\t\t</pre>\n\t</body>\n</html>"
     expr = tmp
     File.write(out_filename, expr)
   end
@@ -129,22 +129,37 @@ defmodule Regx do
   end
 
   def multiParse do
-    ["./Test_HW/out_file_000006.json",
-    "./Test_HW/out_file_000001.json",
-    "./Test_HW/out_file_000002.json",
-    "./Test_HW/out_file_000003.json",
-    "./Test_HW/out_file_000004.json",
-    "./Test_HW/out_file_000002.json"]
-    |> Enum.map(&Task.async(fn -> get_lines(&1,"template.html") end))
+    ["./Test_HW/out_file_000001",
+    "./Test_HW/out_file_000002",
+    "./Test_HW/out_file_000003",
+    "./Test_HW/out_file_000004",
+    "./Test_HW/out_file_000005",
+    "./Test_HW/out_file_000006",
+    "./Test_HW/out_file_000007",
+    "./Test_HW/out_file_000008",
+    "./Test_HW/out_file_000009",
+    "./Test_HW/out_file_000010",
+    "./Test_HW/out_file_000011",
+    "./Test_HW/out_file_000012",
+    "./Test_HW/out_file_000013",
+    "./Test_HW/out_file_000014",
+    "./Test_HW/out_file_000015",
+    "./Test_HW/out_file_000016",
+    "./Test_HW/out_file_000017",
+    "./Test_HW/out_file_000018",
+    "./Test_HW/out_file_000019",
+    "./Test_HW/out_file_000020"]
+    |> Enum.map(&Task.async(fn -> get_lines(&1 <> ".json",&1 <> ".html") end))
     |> Enum.map(&Task.await(&1))
+
   end
 
-  def generateName(n) do
-    "template_page#{n}.html"
-    if(n >= 1) do
-      generateName(n-1)
-    end
+  def timer(function) do
+    function
+    |> :timer.tc()
+    |> elem(0)
+    |> Kernel./(1_000_000)
   end
 end
 
-Regx.multiParse()
+IO.puts(Regx.timer(fn -> Regx.multiParse() end))
