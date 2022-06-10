@@ -149,9 +149,32 @@ defmodule Regx do
     "./Test_HW/out_file_000018",
     "./Test_HW/out_file_000019",
     "./Test_HW/out_file_000020"]
-    |> Enum.map(&Task.async(fn -> get_lines(&1 <> ".json",&1 <> ".html") end))
+    |> Enum.map(&Task.async(fn -> get_lines(&1 <> ".json", &1 <> ".html") end))
     |> Enum.map(&Task.await(&1))
+  end
 
+  def sequentialParse do
+    ["./Test_HW/out_file_000001",
+    "./Test_HW/out_file_000002",
+    "./Test_HW/out_file_000003",
+    "./Test_HW/out_file_000004",
+    "./Test_HW/out_file_000005",
+    "./Test_HW/out_file_000006",
+    "./Test_HW/out_file_000007",
+    "./Test_HW/out_file_000008",
+    "./Test_HW/out_file_000009",
+    "./Test_HW/out_file_000010",
+    "./Test_HW/out_file_000011",
+    "./Test_HW/out_file_000012",
+    "./Test_HW/out_file_000013",
+    "./Test_HW/out_file_000014",
+    "./Test_HW/out_file_000015",
+    "./Test_HW/out_file_000016",
+    "./Test_HW/out_file_000017",
+    "./Test_HW/out_file_000018",
+    "./Test_HW/out_file_000019",
+    "./Test_HW/out_file_000020"]
+    |> Enum.map(&get_lines(&1 <> ".json", &1 <> ".html"))
   end
 
   def timer(function) do
@@ -160,6 +183,15 @@ defmodule Regx do
     |> elem(0)
     |> Kernel./(1_000_000)
   end
+
+  def get_speedup(), do:
+    Regx.timer(fn -> Regx.sequentialParse() end) / Regx.timer(fn -> Regx.multiParse() end)
+
 end
 
+IO.puts("Sequential parse time")
+IO.puts(Regx.timer(fn -> Regx.sequentialParse() end))
+IO.puts("Multi parse time")
 IO.puts(Regx.timer(fn -> Regx.multiParse() end))
+IO.puts("Speedup time")
+IO.puts(Regx.get_speedup())
