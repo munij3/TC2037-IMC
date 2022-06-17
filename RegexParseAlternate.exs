@@ -13,6 +13,18 @@ defmodule Regx do
     File.write(out_filename, expr)
   end
 
+  def get_lines_parallel(in_filename, out_filename) do
+    expr =
+      in_filename
+      |> File.stream!()
+      |> Enum.map(&Task.async(fn -> token_from_line(&1) end))
+      |> Enum.map(&Task.await(&1))
+      |> Enum.filter(&(&1 != nil))
+    tmp = "<!DOCTYPE html>\n<html>\n\t<head>\n\t\t<title>JSON Code</title>\n\t\t<link rel='stylesheet' href='../token_colors.css'>\n\t</head>\n\t<body>\n\t\t<h1>Date: #{DateTime.utc_now}</h1>\n\t\t<pre>\n#{expr}\n\t\t\t</pre>\n\t</body>\n</html>"
+    expr = tmp
+    File.write(out_filename, expr)
+  end
+
   def token_from_line(line) do
     token_from_line(line,"",false,true)
   end
@@ -33,9 +45,9 @@ defmodule Regx do
       token_from_line(tail,html_string,aftr,false)
 
     #Checks for expressions that include multiple " ": " " in the same line
-    (Regex.match?(~r/\s*"[^"]*"\s*\:(\s*"[^"]*"\s*|\s*[^,]*\s*),\s*"[^"]*"\s*\:/,line)) ->
-      [_string, token,token2,token3] = Regex.run(~r/(\s*"[^"]*"\s*)\:(\s*"[^"]*"\s*|\s*[^,]*\s*)(,)\s*"[^"]*"\s*\:/,line) # Matches object key name
-      [_h | t] = String.split(line, ~r/(\s*"[^"]*"\s*\:(\s*"[^"]*"\s*|\s*[^,]*\s*),)/, parts: 2)
+    (Regex.match?(~r/\s*"[^"]"\s\:(\s*"[^"]"\s|\s*[^,]\s),\s*"[^"]"\s\:/,line)) ->
+      [_string, token,token2,token3] = Regex.run(~r/(\s*"[^"]"\s)\:(\s*"[^"]"\s|\s*[^,]\s)(,)\s*"[^"]"\s\:/,line) # Matches object key name
+      [_h | t] = String.split(line, ~r/(\s*"[^"]"\s\:(\s*"[^"]"\s|\s*[^,]\s),)/, parts: 2)
       itoken = getType(token2)
       tmp = "#{html_string}<span class='object-key'>#{token}</span><span class='dot'>:</span>#{itoken}<span class='punctuation'>#{token3}</span>"
       html_string = tmp
@@ -130,31 +142,15 @@ defmodule Regx do
 
   def alternateParser(dir) do
     Path.wildcard("#{dir}/*.json")
-    |> Enum.map(&Task.start(fn -> get_lines(&1, "#{&1}.html") end))
+    |> Enum.map(&Task.async(fn -> get_lines_parallel(&1, "#{&1}.html") end))
+    |> Enum.map(&Task.await(&1))
+
   end
 
-  def sequentialParse do
-    ["./Test_HW/out_file_000001",
-    "./Test_HW/out_file_000002",
-    "./Test_HW/out_file_000003",
-    "./Test_HW/out_file_000004",
-    "./Test_HW/out_file_000005",
-    "./Test_HW/out_file_000006",
-    "./Test_HW/out_file_000007",
-    "./Test_HW/out_file_000008",
-    "./Test_HW/out_file_000009",
-    "./Test_HW/out_file_000010",
-    "./Test_HW/out_file_000011",
-    "./Test_HW/out_file_000012",
-    "./Test_HW/out_file_000013",
-    "./Test_HW/out_file_000014",
-    "./Test_HW/out_file_000015",
-    "./Test_HW/out_file_000016",
-    "./Test_HW/out_file_000017",
-    "./Test_HW/out_file_000018",
-    "./Test_HW/out_file_000019",
-    "./Test_HW/out_file_000020"]
-    |> Enum.map(&get_lines(&1 <> ".json", &1 <> ".html"))
+  def sequentialParse(dir) do
+    Path.wildcard("#{dir}/*.json")
+    |> Enum.map(&get_lines(&1, &1 <> ".html"))
+
   end
 
   def timer(function) do
@@ -165,13 +161,13 @@ defmodule Regx do
   end
 
   def get_speedup(), do:
-    Regx.timer(fn -> Regx.sequentialParse() end) / Regx.timer(fn -> Regx.alternateParser("./Test_files") end)
+    Regx.timer(fn -> Regx.sequentialParse("./Test_HW") end) / Regx.timer(fn -> Regx.alternateParser("./Test_HW") end)
 
 end
 
 IO.puts("Sequential parse time")
-IO.puts(Regx.timer(fn -> Regx.sequentialParse() end))
+IO.puts(Regx.timer(fn -> Regx.sequentialParse("./Test_HW") end))
 IO.puts("Multi parse time")
-IO.puts(Regx.timer(fn -> Regx.alternateParser("./Test_files") end))
+IO.puts(Regx.timer(fn -> Regx.alternateParser("./Test_HW") end))
 IO.puts("Speedup time")
 IO.puts(Regx.get_speedup())
